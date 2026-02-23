@@ -29,3 +29,7 @@ chmod +x start.sh
 
 - **前端UI (`app.py`)**：基于 `Streamlit` 构建，负责文件上传、处理状态反馈、双栏（Tab）布局渲染与文件打包下载交互逻辑。
 - **后端解析 (`pdf_processor.py`)**：核心执行文件，负责提取 PDF 文件原始素材。封装了基于 `pymupdf` (fitz) 的遍历和尺寸过滤机制及 `pymupdf4llm` 的图文结构重建分析架构。
+
+## 开发者
+
+- Jiackey-DMESTUDIO

@@ -1,0 +1,31 @@
+PDF Content Extractor - User Guide
+
+1. Overview
+The PDF Content Extractor is a local desktop application designed to accurately extract raw text (in Markdown format) and high-resolution images (>100px) from PDF documents. All processing is performed locally to ensure data privacy and security.
+
+2. System Requirements
+- Operating System: Windows 10/11
+- Environment: Python 3.8 or higher installed (if running from source) or via the provided launcher.
+
+3. Installation and Startup
+- Locate the unzipped application directory.
+- Double-click the "start.bat" script. This will automatically set up the environment, install required dependencies, and launch the application in your default web browser.
+
+4. How to Use
+Step 4.1: Uploading a Document
+- Once the application opens in your browser, drag and drop your target PDF file into the designated upload area, or click the upload area to select a file from your computer.
+- A success message will appear once the file is uploaded.
+
+Step 4.2: Extraction
+- Click the "开始解析" (Start Extraction) button.
+- Please wait while the document is processed. Processing time may vary depending on the file size and complexity (typically several dozen seconds).
+
+Step 4.3: Viewing and Downloading Results
+- Markdown Text: Navigate to the "📝 Markdown 文本区" (Markdown Text Area) tab to view the extracted text. You can download the text as a `.md` file using the provided download button, or view/copy the raw Markdown code.
+- High-Resolution Images: Navigate to the "🖼️ 美术素材区" (Artwork Area) tab to view extracted images. You can download individual images or use the "📦 一键打包下载所有图片 (.zip)" button to download all images as a single ZIP archive. Note that images smaller than 100px are automatically filtered out.
+
+5. Troubleshooting
+- If the application fails to start, ensure that Python is properly installed and added to your system's PATH.
+- If the browser does not open automatically, you can manually access the application by navigating to http://localhost:8501 in your web browser after running "start.bat".
+
+Developed by DMESTUDIO

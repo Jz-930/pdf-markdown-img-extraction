@@ -1,11 +1,18 @@
 import os
 import fitz
 import pymupdf4llm
+import re
 
-def extract_markdown(pdf_path: str) -> tuple[str, bool]:
+__author__ = "Jiackey"
+__studio__ = "DMESTUDIO"
+__copyright__ = "Copyright 2026, DMESTUDIO Inc."
+
+def extract_markdown(pdf_path: str, images_inline_dir: str) -> tuple[str, str, bool]:
     """
     Extract text from PDF as Markdown using pymupdf4llm.
-    Returns a tuple of (markdown_text, is_likely_outlined).
+    Returns a tuple of (md_mixed, md_pure, is_likely_outlined).
+    `md_mixed` contains inline image references.
+    `md_pure` is stripped of inline image references.
     `is_likely_outlined` is True if the PDF has very little text but contains many vector paths or images,
     suggesting fonts were converting to outlines.
     """
@@ -35,12 +42,18 @@ def extract_markdown(pdf_path: str) -> tuple[str, bool]:
             is_likely_outlined = True
 
     try:
-        md_text = pymupdf4llm.to_markdown(pdf_path)
+        os.makedirs(images_inline_dir, exist_ok=True)
+        # Extract markdown with image links pointing to images_inline_dir
+        # image_size_limit=0.03 effectively ignores images < 3% of page dimension
+        md_mixed = pymupdf4llm.to_markdown(pdf_path, write_images=True, image_path=images_inline_dir, image_size_limit=0.03)
+        # Generate pure text md by removing standard markdown image tags
+        md_pure = re.sub(r'!\[.*?\]\((.*?)\)', '', md_mixed)
     except Exception as e:
-        md_text = ""
+        md_mixed = ""
+        md_pure = ""
         is_likely_outlined = True # If it completely fails, we can assume it's untractable
         
-    return md_text, is_likely_outlined
+    return md_mixed, md_pure, is_likely_outlined
 
 def extract_images(pdf_path: str, output_dir: str) -> list[str]:
     """
@@ -66,9 +79,8 @@ def extract_images(pdf_path: str, output_dir: str) -> list[str]:
                 
             rect = fitz.Rect(bbox)
             
-            # Filter mechanism: ignore small decorative images (icons, color blocks)
-            # Use rendered size for filtering
-            if rect.width < 100 or rect.height < 100:
+            # Allow all valid bounding boxes (skip completely invisible elements)
+            if rect.width <= 0 or rect.height <= 0:
                 continue
                 
             image_saved = False

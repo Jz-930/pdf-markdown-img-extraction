@@ -2,20 +2,26 @@ import streamlit as st
 import base64
 import os
 import zipfile
+import re
 from pdf_processor import extract_markdown, extract_images
 
-def main():
-    st.set_page_config(page_title="PDF Extractor Tool", layout="wide", page_icon="img/jz-icon-32.webp")
-    
-    def image_to_data_uri(path):
-        with open(path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("ascii")
-        return f"data:image/webp;base64,{encoded}"
+# Hidden tracker for copyright protection
+_internal_tracking_id = "dev:Jiackey|studio:DMESTUDIO"
 
-    logo_white_uri = image_to_data_uri("img/logo-white.webp")
-    footer_icon_uri = image_to_data_uri("img/jz-icon-32.webp")
+def get_image_data_uri(path: str) -> str:
+    """Helper to convert local images to base64 Data URIs for HTML embedding."""
+    if not os.path.exists(path):
+        return ""
+    with open(path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("ascii")
+    return f"data:image/webp;base64,{encoded}"
 
-    # Modern Tailwind-like Dark Theme CSS, Custom Headers/Footers, Logo, and Hidden Watermark
+def get_custom_styles() -> str:
+    """Returns the custom CSS and hidden HTML elements for the modern UI."""
+    logo_white_uri = get_image_data_uri("img/logo-white.webp")
+    footer_icon_uri = get_image_data_uri("img/jz-icon-32.webp")
+
+    # Modern Tailwind-like Dark Theme CSS
     custom_css = """
         <style>
         /* Hide Default Streamlit Elements */
@@ -154,13 +160,32 @@ def main():
                 <img width="16" height="16" src="{footer_icon_uri}" alt="DME Logo"/>
                 <span>DME Toolchain</span>
             </div>
-            <div>PDF Content Extractor v1.0.4</div>
+            <div>PDF Content Extractor v1.1</div>
         </div>
     """
-    st.markdown(custom_css + custom_html, unsafe_allow_html=True)
+    return custom_css + custom_html
+
+def convert_md_images_to_base64(md_text: str) -> str:
+    """Converts local image links in Markdown to inline base64 Data URIs."""
+    def replace_with_data_uri(match):
+        img_path = match.group(2)
+        if os.path.exists(img_path):
+            with open(img_path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("utf-8")
+            ext = os.path.splitext(img_path)[1][1:] or "png"
+            return f"![{match.group(1)}](data:image/{ext};base64,{b64})"
+        return match.group(0)
+    
+    return re.sub(r'!\[(.*?)\]\((.*?)\)', replace_with_data_uri, md_text)
+
+def main():
+    st.set_page_config(page_title="PDF Extractor Tool", layout="wide", page_icon="img/jz-icon-32.webp")
+    
+    # Render customized styles and footers
+    st.markdown(get_custom_styles(), unsafe_allow_html=True)
     
     st.title("📄 PDF 内容提取工具")
-    st.markdown("<p style='color: #94a3b8; font-size: 1.1rem; line-height: 1.6;'>轻松提取 PDF 文档中的<strong style='color:#f8fafc'>纯文本（Markdown）</strong>与<strong style='color:#f8fafc'>高清原始图片（>100px）</strong>。<br/>所有处理均在本地运行。<br/><span style='font-size: 0.9em; opacity: 0.8;'>DMESTUDIO Inc.开发</span></p>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #94a3b8; font-size: 1.1rem; line-height: 1.6;'>轻松提取 PDF 文档中的<strong style='color:#f8fafc'>纯文本（Markdown）</strong>与<strong style='color:#f8fafc'>高清原始图片</strong>。<br/>所有处理均在本地运行。<br/><span style='font-size: 0.9em; opacity: 0.8;'>DMESTUDIO Inc.开发</span></p>", unsafe_allow_html=True)
     
     uploaded_file = st.file_uploader("拖拽或点击上传您的 PDF 文件", type=["pdf"])
     
@@ -179,14 +204,16 @@ def main():
         if st.button("开始解析", type="primary"):
             with st.spinner("解析中，这可能需要几十秒，请稍候..."):
                 images_dir = os.path.join(temp_dir, "images")
+                images_inline_dir = os.path.join(temp_dir, "images_inline")
                 
                 try:
-                    md_text, is_likely_outlined = extract_markdown(pdf_path)
+                    md_mixed, md_pure, is_likely_outlined = extract_markdown(pdf_path, images_inline_dir)
                     image_paths = extract_images(pdf_path, images_dir)
                     
                     st.toast("解析已完成！", icon="✅")
                     
-                    st.session_state["md_text"] = md_text
+                    st.session_state["md_mixed"] = md_mixed
+                    st.session_state["md_pure"] = md_pure
                     st.session_state["is_likely_outlined"] = is_likely_outlined
                     st.session_state["image_paths"] = image_paths
                     st.session_state["pdf_name"] = uploaded_file.name
@@ -197,37 +224,61 @@ def main():
                     return
                     
     # Display results if available in session state
-    if "md_text" in st.session_state:
+    if "md_mixed" in st.session_state:
         st.divider()
         st.subheader("解析结果展现")
         
-        tab1, tab2 = st.tabs(["📝 Markdown 文本区", f"🖼️ 美术素材区 ({len(st.session_state['image_paths'])}张)"])
+        tab1, tab2, tab3 = st.tabs(["📄 图文混合区", "📝 纯文本 Markdown 区", f"🖼️ 美术素材区 ({len(st.session_state['image_paths'])}张)"])
         
-        # Tab 1: Markdown
+        warning_msg = ("⚠️ **检测到可能是“已转曲”或“纯图片扫描”的 PDF 文档 系统发现该文档内几乎不包含真实的文本流数据（即便肉眼能看到文字，它们在数据层面上也已经被转换为了矢量线条或图片）。**\n\n"
+                       "因此无法常规提取出文本。\n\n"
+                       "如果您需要提取此类文档的文字，需要使用包含 OCR功能的工具。")
+
+        # Tab 1: Mixed Text & Images
         with tab1:
             if st.session_state.get("is_likely_outlined", False):
-                st.warning("⚠️ **检测到可能是“已转曲”或“纯图片扫描”的 PDF 文档 系统发现该文档内几乎不包含真实的文本流数据（即便肉眼能看到文字，它们在数据层面上也已经被转换为了矢量线条或图片）。**\n\n"
-                          "因此无法常规提取出文本。\n\n"
-                          "如果您需要提取此类文档的文字，需要使用包含 OCR功能的工具。")
-                          
+                st.warning(warning_msg)
+                
             col_content, col_actions = st.columns([3, 1])
             with col_content:
-                st.markdown(st.session_state["md_text"])
+                # Convert local image paths to base64 Data URIs natively
+                md_mixed_display = convert_md_images_to_base64(st.session_state["md_mixed"])
+                st.markdown(md_mixed_display, unsafe_allow_html=True)
                 
             with col_actions:
                 st.download_button(
-                    label="⬇️ 下载 .md 文件",
-                    data=st.session_state["md_text"],
-                    file_name=f"{os.path.splitext(st.session_state['pdf_name'])[0]}.md",
+                    label="⬇️ 下载图文混合 .md",
+                    data=st.session_state["md_mixed"],
+                    file_name=f"{os.path.splitext(st.session_state['pdf_name'])[0]}_mixed.md",
+                    mime="text/markdown",
+                    use_container_width=True
+                )
+                with st.expander("查看原始 Markdown"):
+                    st.code(st.session_state["md_mixed"], language="markdown")
+
+        # Tab 2: Pure Markdown Text
+        with tab2:
+            if st.session_state.get("is_likely_outlined", False):
+                st.warning(warning_msg)
+                
+            col_content, col_actions = st.columns([3, 1])
+            with col_content:
+                st.markdown(st.session_state["md_pure"])
+                
+            with col_actions:
+                st.download_button(
+                    label="⬇️ 下载纯文本 .md",
+                    data=st.session_state["md_pure"],
+                    file_name=f"{os.path.splitext(st.session_state['pdf_name'])[0]}_pure.md",
                     mime="text/markdown",
                     use_container_width=True
                 )
                 
-                with st.expander("查看原始 Markdown / 一键复制"):
-                    st.code(st.session_state["md_text"], language="markdown")
+                with st.expander("一键复制内容"):
+                    st.code(st.session_state["md_pure"], language="markdown")
 
-        # Tab 2: Images
-        with tab2:
+        # Tab 3: Images
+        with tab3:
             image_paths = st.session_state["image_paths"]
             if not image_paths:
                 st.info("未从此文档中提取到有效图像（或所有图像均被过滤机制排除）。")

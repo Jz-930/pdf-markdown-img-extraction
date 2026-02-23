@@ -1,31 +1,33 @@
-PDF Content Extractor - User Guide
+# PDF Content Extractor - User Guide
 
-1. Overview
-The PDF Content Extractor is a local desktop application designed to accurately extract raw text (in Markdown format) and high-resolution images (>100px) from PDF documents. All processing is performed locally to ensure data privacy and security.
+## 1. Overview
+The PDF Content Extractor is a secure, locally-hosted desktop application designed for high-fidelity extraction of text and images from PDF documents. It parses documents into pure Markdown, inline mixed Markdown, and discrete high-resolution image assets without relying on external cloud processing.
 
-2. System Requirements
-- Operating System: Windows 10/11
-- Environment: Python 3.8 or higher installed (if running from source) or via the provided launcher.
+## 2. System Requirements
+- Operating System: Windows 10 or Windows 11
+- Environment: The provided `start.bat` script automatically creates an isolated Python virtual environment and installs all required dependencies.
 
-3. Installation and Startup
-- Locate the unzipped application directory.
-- Double-click the "start.bat" script. This will automatically set up the environment, install required dependencies, and launch the application in your default web browser.
+## 3. Installation & Initialization
+1. Extract the application archive to a preferred local directory.
+2. Execute `start.bat`. 
+3. The system will automatically configure the required environment and launch the graphical interface in your default web browser (typically at http://localhost:8501).
 
-4. How to Use
-Step 4.1: Uploading a Document
-- Once the application opens in your browser, drag and drop your target PDF file into the designated upload area, or click the upload area to select a file from your computer.
-- A success message will appear once the file is uploaded.
+## 4. Operation Workflow
+### 4.1 Uploading Documents
+Drag and drop your target PDF file into the upload zone, or click to browse your local file system. Supported format: `.pdf`.
 
-Step 4.2: Extraction
-- Click the "开始解析" (Start Extraction) button.
-- Please wait while the document is processed. Processing time may vary depending on the file size and complexity (typically several dozen seconds).
+### 4.2 Executing Extraction
+Click the primary "开始解析" (Start Extraction) button. Depending on document complexity and page count, processing may require from several seconds up to a few minutes.
 
-Step 4.3: Viewing and Downloading Results
-- Markdown Text: Navigate to the "📝 Markdown 文本区" (Markdown Text Area) tab to view the extracted text. You can download the text as a `.md` file using the provided download button, or view/copy the raw Markdown code.
-- High-Resolution Images: Navigate to the "🖼️ 美术素材区" (Artwork Area) tab to view extracted images. You can download individual images or use the "📦 一键打包下载所有图片 (.zip)" button to download all images as a single ZIP archive. Note that images smaller than 100px are automatically filtered out.
+### 4.3 Reviewing & Exporting Results
+Upon completion, the interface will display three distinct workspaces:
+- **📄 Mixed Content (图文混合区):** Displays extracted text with inline images positioned contextually. You can highlight and copy this content directly to rich-text editors (e.g., Microsoft Word, Notion) retaining both text and images, or download it as a `.md` file.
+- **📝 Pure Markdown (纯文本 Markdown 区):** Displays clean, text-only Markdown code. All image references are stripped. Ideal for LLM ingestion or plain-text archiving.
+- **🖼️ Artwork Assets (美术素材区):** A gallery of all extracted visual assets and vector drawings. You may download individual images or use the bulk download button to acquire a consolidated `.zip` archive.
 
-5. Troubleshooting
-- If the application fails to start, ensure that Python is properly installed and added to your system's PATH.
-- If the browser does not open automatically, you can manually access the application by navigating to http://localhost:8501 in your web browser after running "start.bat".
+## 5. Troubleshooting & Edge Cases
+- **Warning Banner Displayed:** If a yellow warning banner appears, it indicates the PDF was likely converted to outlines (Create Outlines) prior to export, or is a flattened scanned image. These documents lack underlying text streams and require external Optical Character Recognition (OCR) tools for text extraction. However, the system's fallback mechanisms will still attempt to isolate and extract all visual elements into the Artwork Assets tab.
+- **Application Fails to Launch:** Ensure the directory path does not contain special characters or spaces. Verify your system's execution policies permit running batch scripts.
 
-Developed by DMESTUDIO
+---
+Produced by Jiackey-DMESTUDIO

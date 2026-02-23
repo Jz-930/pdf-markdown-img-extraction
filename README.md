@@ -1,35 +1,31 @@
-# PDF Extractor (PDF 内容提取工具)
+# PDF Content Extractor
 
-一个本地运行的轻量级 Web 应用程序，用于从 PDF 文件中精准提取格式化的 Markdown 文本和高清原始图片素材。工具专为提高文档内容提取效率而设计，完全在本地运行，保证数据隐私安全。
+## 1. Project Description
+The PDF Content Extractor is a secure, locally-hosted desktop toolset explicitly engineered for high-fidelity extraction of text and visual assets from PDF documents. By eliminating the necessity for external cloud processing, it ensures the absolute privacy of your local documents.
 
-## 特性
+The application leverages PyMuPDF and specifically `pymupdf4llm` to parse complex document structures, delivering:
+1. **Mixed Content Markdown:** Extracted text with inline images positioned contextually, perfect for cross-application rich-text transfer.
+2. **Pure Markdown:** De-noised, text-only Markdown code optimized for LLM ingestion and plain-text archiving.
+3. **Artwork Assets:** A consolidated gallery of all high-resolution visual elements and vector graphics exported natively into standard image formats.
 
-- 📝 **高质量 Markdown 文本提取**：使用 `pymupdf4llm` 深度解析 PDF 的标题、正文文本和表格，提供精准的长文重组能力。
-- 🖼️ **高清图片无损提取**：使用 `PyMuPDF` 穿透页面，提取内嵌的原始图片，并自动过滤尺寸过小（< 100px）的无用装饰/色块。
-- 📦 **便捷的一键操作**：提供支持一键复制的 Markdown 查看器，以及单张或打包下载图片素材的功能。
-- 🔒 **纯本地隐私安全**：无需连接任何外部 云 API，所有文档均保留在您的设备内处理。
+## 2. Technical Stack
+- **Frontend Framework:** Streamlit
+- **Backend Core:** Python 3.8+
+- **Parsing Engines:** PyMuPDF (`fitz`), `pymupdf4llm`
 
-## 环境要求
+## 3. Quick Start
+### 3.1 Dependencies
+Ensure you have Python installed locally. If you are operating within the pre-packaged executable environment, dependencies are managed automatically via the provided batch script.
 
-- Python 3.9 或以上版本。
+### 3.2 Execution
+Double-click the `start.bat` script located in the root directory. 
+The system will initialize a virtual environment, install the prerequisites detailed in `requirements.txt`, and launch the web-based graphical interface on `http://localhost:8501`.
 
-## 如何运行
+## 4. Notable Features
+- **Heuristic Outline Detection:** The engine dynamically analyzes the ratio of text density to vector paths, warning the user if the document has been completely converted to outlines (Create Outlines) or is strictly a scanned image requiring OCR.
+- **Deep Fallback Extraction:** Bypasses conventional xref extraction limitations by initiating high-precision rendering snapshots for fragmented vector graphics that cannot be natively pulled.
+- **Base64 Data URI Integration:** Converts localized visual assets into Base64 format asynchronously, allowing native HTML inline rendering of complex reports directly within the UI tabs.
 
-### Windows
-双击运行根目录下的 `start.bat` 文件。脚本会自动创建并激活 Python 虚拟环境、安装依赖并在默认浏览器打开页面：`http://localhost:8501`。
-
-### macOS / Linux
-在终端中执行以下命令：
-```bash
-chmod +x start.sh
-./start.sh
-```
-
-## 技术架构说明
-
-- **前端UI (`app.py`)**：基于 `Streamlit` 构建，负责文件上传、处理状态反馈、双栏（Tab）布局渲染与文件打包下载交互逻辑。
-- **后端解析 (`pdf_processor.py`)**：核心执行文件，负责提取 PDF 文件原始素材。封装了基于 `pymupdf` (fitz) 的遍历和尺寸过滤机制及 `pymupdf4llm` 的图文结构重建分析架构。
-
-## 开发者
-
-- Jiackey-DMESTUDIO
+---
+**Author Info:**
+Jiackey-DMESTUDIO制作

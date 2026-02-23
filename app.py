@@ -154,7 +154,7 @@ def main():
                 <img width="16" height="16" src="{footer_icon_uri}" alt="DME Logo"/>
                 <span>DME Toolchain</span>
             </div>
-            <div>PDF Content Extractor v1.0.3</div>
+            <div>PDF Content Extractor v1.0.4</div>
         </div>
     """
     st.markdown(custom_css + custom_html, unsafe_allow_html=True)
@@ -181,12 +181,13 @@ def main():
                 images_dir = os.path.join(temp_dir, "images")
                 
                 try:
-                    md_text = extract_markdown(pdf_path)
+                    md_text, is_likely_outlined = extract_markdown(pdf_path)
                     image_paths = extract_images(pdf_path, images_dir)
                     
                     st.toast("解析已完成！", icon="✅")
                     
                     st.session_state["md_text"] = md_text
+                    st.session_state["is_likely_outlined"] = is_likely_outlined
                     st.session_state["image_paths"] = image_paths
                     st.session_state["pdf_name"] = uploaded_file.name
                     st.session_state["images_dir"] = images_dir
@@ -204,6 +205,11 @@ def main():
         
         # Tab 1: Markdown
         with tab1:
+            if st.session_state.get("is_likely_outlined", False):
+                st.warning("⚠️ **检测到可能是“已转曲”或“纯图片扫描”的 PDF 文档 系统发现该文档内几乎不包含真实的文本流数据（即便肉眼能看到文字，它们在数据层面上也已经被转换为了矢量线条或图片）。**\n\n"
+                          "因此无法常规提取出文本。\n\n"
+                          "如果您需要提取此类文档的文字，需要使用包含 OCR功能的工具。")
+                          
             col_content, col_actions = st.columns([3, 1])
             with col_content:
                 st.markdown(st.session_state["md_text"])

@@ -2,12 +2,45 @@ import os
 import fitz
 import pymupdf4llm
 
-def extract_markdown(pdf_path: str) -> str:
+def extract_markdown(pdf_path: str) -> tuple[str, bool]:
     """
     Extract text from PDF as Markdown using pymupdf4llm.
+    Returns a tuple of (markdown_text, is_likely_outlined).
+    `is_likely_outlined` is True if the PDF has very little text but contains many vector paths or images,
+    suggesting fonts were converting to outlines.
     """
-    md_text = pymupdf4llm.to_markdown(pdf_path)
-    return md_text
+    # First, do a quick check via PyMuPDF to see if it's outlined/rasterized
+    doc = fitz.open(pdf_path)
+    total_text_len = 0
+    total_drawings = 0
+    total_images = 0
+    num_pages = len(doc)
+    
+    for page in doc:
+        total_text_len += len(page.get_text())
+        total_drawings += len(page.get_drawings())
+        total_images += len(page.get_image_info())
+        
+    doc.close()
+    
+    # Heuristic: If there's barely any text (e.g. < 50 chars per page on average)
+    # but there are a lot of drawings/paths (> 100 per page) or it's just big images.
+    is_likely_outlined = False
+    if num_pages > 0:
+        avg_text = total_text_len / num_pages
+        avg_drawings = total_drawings / num_pages
+        avg_images = total_images / num_pages
+        
+        if avg_text < 50 and (avg_drawings > 50 or avg_images > 0.5):
+            is_likely_outlined = True
+
+    try:
+        md_text = pymupdf4llm.to_markdown(pdf_path)
+    except Exception as e:
+        md_text = ""
+        is_likely_outlined = True # If it completely fails, we can assume it's untractable
+        
+    return md_text, is_likely_outlined
 
 def extract_images(pdf_path: str, output_dir: str) -> list[str]:
     """
